@@ -1,111 +1,126 @@
 # 🌀 Aetherion - Enterprise AI Orchestration Platform
 
-**Production-ready, self-hosted AI workflow engine**
+**Production-ready, self-hosted AI workflow engine с поддержкой LLM, очередей и веб-интерфейса**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.104-green.svg)](https://fastapi.tiangolo.com/)
+[![Next.js](https://img.shields.io/badge/Next.js-14-black.svg)](https://nextjs.org/)
+[![Docker](https://img.shields.io/badge/Docker-24.0+-blue.svg)](https://www.docker.com/)
 
 ## ✨ Features
 
-- 🚀 **Zero-config startup** - `docker-compose up` and you're live
-- 🤖 **Multi-LLM support** (OpenAI, with easy extension for Anthropic/Local)
-- 📊 **Real-time logs** via WebSocket
-- 💰 **Cost tracking** per workflow run
-- 🔧 **Extensible tools** (HTTP, Calculator, Code Review, Custom)
-- 📈 **Metrics dashboard** built-in
-- 🐳 **Full Docker Compose** setup for production
+- 🚀 **Zero-config startup** — `docker-compose up` и вы в продакшене
+- 🤖 **Multi-LLM support** — OpenRouter (DeepSeek/Gemini), легко расширяется под OpenAI/Anthropic
+- 🌐 **Бесплатный встроенный переводчик** — Google Translate API (EN↔RU)
+- 📊 **Real-time логи** — через WebSocket (в разработке)
+- 💰 **Cost tracking** — отслеживание затрат на каждый workflow run
+- 🔧 **5 готовых воркфлоу** — калькулятор, AI чат, парсинг сайтов, ревью кода, переводчик
+- 📈 **Встроенный дашборд** — метрики, история запусков, быстрые примеры
+- 🐳 **Полный Docker Compose** — PostgreSQL, Redis, MinIO, Gateway, Worker, Frontend, Nginx
 
 ## 🚀 Quick Start
 
-```bash
-# Clone and enter directory
-git clone https://github.com/yourcompany/aetherion.git
-cd aetherion
+### Требования
+- Docker Desktop 24.0+
+- Git
+- 4GB RAM (рекомендуется 8GB)
 
-# Start everything (Postgres, Redis, MinIO, Gateway, Worker, Frontend)
+### Установка и запуск
+
+```bash
+# Клонируйте репозиторий
+git clone https://github.com/Asha-1703-V/Aetherion-Platform.git
+cd Aetherion-Platform
+
+# Создайте файл с секретами (опционально, для AI)
+cp .env.example .env
+# Отредактируйте .env и добавьте ваш OpenRouter API ключ
+
+# Запустите все сервисы
 docker-compose up -d
 
-# Optional: Set OpenAI API key for real AI
-echo "OPENAI_API_KEY=sk-your-key" > .env
-docker-compose restart orchestrator
-
-# Open in browser
-open http://localhost:3000
+# Откройте в браузере
+open http://localhost
 ```
 
-## 📡 API Usage
-```bash
-# Execute AI Chat workflow
-curl -X POST http://localhost:8000/api/v1/execute \
-  -H "Content-Type: application/json" \
-  -d '{
-    "workflow_name": "ai_chat",
-    "payload": {"prompt": "Hello AI!"},
-    "async_mode": false
-  }'
-
-# Get result by ID
-curl http://localhost:8000/api/v1/result/{run_id}
-
-# Get metrics
-curl http://localhost:8000/api/v1/metrics
-```
+## Доступные endpoints
+| Сервис                 | URL                                  | Описание                                     |
+|------------------------|--------------------------------------|----------------------------------------------|
+| **Frontend Dashboard** | http://localhost                     | Веб-интерфейс для управления workflow        |
+| **API Gateway**        | http://localhost:8000                | REST API для выполнения запросов             |
+| **Swagger UI**         | http://localhost:8000/docs           | Интерактивная документация API               |
+| **API Metrics**        | http://localhost:8000/api/v1/metrics | Метрики: количество запусков, ошибки, затраты|
+| **MinIO Console**      | http://localhost:9001                | Хранилище артефактов (логи, файлы)           |
 
 ## 🏗 Architecture
 ```
-┌─────────┐     ┌─────────┐     ┌──────────┐     ┌────────────┐
-│ Browser │────▶│ Gateway │────▶│  Redis   │────▶│Orchestrator│
-└─────────┘     │(FastAPI)│     │ Streams  │     │   Worker   │
-                └────┬────┘     └──────────┘     └─────┬──────┘
-                     │                                 │
-                ┌────▼────┐                      ┌─────▼─────┐
-                │Postgres │                      │   LLMs    │
-                └─────────┘                      │  & Tools  │
-                                                 └───────────┘
+┌────────────┐     ┌─────────────┐     ┌──────────┐     ┌──────────────┐
+│  Browser   │────▶│   Nginx     │────▶│  Redis   │────▶│ Orchestrator │
+│  :3000     │     │  :80        │     │ Streams  │     │   Worker     │
+└────────────┘     └─────┬───────┘     └──────────┘     └──────┬───────┘
+                         │                                     │
+                    ┌────▼───────┐                        ┌────▼───────┐
+                    │  Gateway   │                        │   LLMs     │
+                    │ (FastAPI)  │                        │  & Tools   │
+                    └────┬───────┘                        └────────────┘
+                         │
+                    ┌────▼───────┐
+                    │ Postgres   │
+                    │  & MinIO   │
+                    └────────────┘
 ```
 
-## 🛠 Available Workflows
-```
-Workflow	Description	Example Payload
-ai_chat	Conversational AI	{"prompt": "Hello"}
-fetch_and_summarize	Web page summarizer	{"url": "https://example.com"}
-calculator	Safe math evaluator	{"expression": "2+2*10"}
-code_review	AI code analysis	{"code": "function add(a,b){return a+b}"}
-```
+### 🔧 Development
 
-## 📊 Monitoring
-API Docs: http://localhost:8000/docs
-
-Metrics: http://localhost:8000/api/v1/metrics
-
-MinIO Console: http://localhost:9001 (minioadmin/minioadmin)
-
-UI — http://localhost:3000
-
-## 🔧 Development
+Запуск в режиме разработки
 ```bash
-# Rebuild after changes
-make build
+# Запустить только бэкенд в Docker
+docker-compose up -d postgres redis gateway orchestrator minio
 
-# Restart all services
-make restart
-
-# View logs
-make logs
-
-# Run migrations manually
-make migrate
+# Запустить frontend на хосте (с hot-reload)
+cd frontend
+npm install
+npm run dev
 ```
 
-## 🎯 Roadmap
-Custom tool registration API
+Полезные команды
+```bash
+# Пересобрать все сервисы
+docker-compose build --no-cache
 
-YAML-based workflow DAGs
+# Посмотреть логи
+docker-compose logs -f
 
-Slack/Telegram integration
+# Перезапустить конкретный сервис
+docker-compose restart orchestrator
 
-Kubernetes Helm chart
+# Остановить всё
+docker-compose down
 
-LangChain integration
+# Остановить и удалить все данные
+docker-compose down -v
+```
+
+### 🔐 Настройка API ключей
+```
+Для работы AI чата и code review нужен API ключ OpenRouter:
+
+- Зарегистрируйтесь на OpenRouter
+
+- Получите API ключ в разделе "Keys"
+
+- Создайте файл .env в корне проекта:
+
+OPENROUTER_API_KEY=sk-or-v1-ваш_ключ
+
+- Перезапустите orchestrator
+```
+
 
 ## 📝 License
-MIT - Use for any purpose, commercial or personal.
+Distributed under the MIT License. See LICENSE for more information.
+
+## 📧 Contact
+Автор: Asha-1703-V
+@Way_Asha
